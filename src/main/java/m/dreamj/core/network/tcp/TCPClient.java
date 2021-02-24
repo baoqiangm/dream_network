@@ -14,24 +14,38 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import m.dreamj.core.network.ServerConfig;
 
+/**
+ * TCP 客户端
+ * 
+ * @author dreamj
+ * @Date 2021-02-24 16:07
+ */
 public class TCPClient {
 
-    private static Logger logger = LoggerFactory.getLogger(TCPClient.class);
-    private final Bootstrap client;
+    private static Logger                                  logger = LoggerFactory.getLogger(TCPClient.class);
+    private final Bootstrap                                client;
     private final ConcurrentHashMap<String, TCPDispatcher> dispatchers;
-    private ServerConfig sc;
+    private ServerConfig                                   sc;
 
     public TCPClient() {
         this(2);
     }
 
     public TCPClient(int coreSize) {
-        client = new Bootstrap();
+        client      = new Bootstrap();
         dispatchers = new ConcurrentHashMap<>();
         client.group(new NioEventLoopGroup(coreSize));
         client.channel(NioSocketChannel.class);
     }
 
+    /**
+     * 连接远程服务器
+     * 
+     * @param sc
+     * @param connection
+     * @author dreamj
+     * @Date 2021-02-24 16:08
+     */
     public void connect(ServerConfig sc, Function<SocketChannel, ? extends TCPConnection> connection) {
         TCPDispatcher dispatcher = new TCPDispatcher(sc.name, connection);
         client.handler(dispatcher);
@@ -47,6 +61,12 @@ public class TCPClient {
 
     }
 
+    /**
+     * 关闭连接
+     * 
+     * @author dreamj
+     * @Date 2021-02-24 16:08
+     */
     public void shutdown() {
         client.config().group().shutdownGracefully().addListener(listener -> {
             if (listener.isSuccess()) {

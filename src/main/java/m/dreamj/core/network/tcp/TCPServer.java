@@ -19,20 +19,32 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import m.dreamj.core.network.ServerConfig;
 
+/**
+ * TCP 服务器
+ * 
+ * @author dreamj
+ * @Date 2021-02-23 17:58
+ */
 public class TCPServer {
 
-    private final static Logger logger = LoggerFactory.getLogger(TCPServer.class);
+    private final static Logger                            logger = LoggerFactory.getLogger(TCPServer.class);
     private final ConcurrentHashMap<String, TCPDispatcher> dispatchers;
 
-    private final ServerBootstrap server;
+    private final ServerBootstrap                          server;
 
     public TCPServer() {
         this(1, 2);
     }
 
+    /**
+     * @param acceptSize 接收线程数量
+     * @param coreSize 处理数据流线程数量
+     * @author dreamj
+     * @Date 2021-02-23 17:59
+     */
     public TCPServer(int acceptSize, int coreSize) {
         this.dispatchers = new ConcurrentHashMap<>();
-        this.server = new ServerBootstrap();
+        this.server      = new ServerBootstrap();
         int backlog = 1024;
         server.group(new NioEventLoopGroup(acceptSize), new NioEventLoopGroup(coreSize)).channel(NioServerSocketChannel.class);
         server.option(ChannelOption.SO_BACKLOG, backlog).option(ChannelOption.SO_REUSEADDR, Boolean.valueOf(true));
@@ -41,6 +53,15 @@ public class TCPServer {
         server.handler(new LoggingHandler(LogLevel.DEBUG));
     }
 
+    /**
+     * 绑定服务器地址，开启服务监听
+     * 
+     * @param sc
+     * @param connection 服务器接收连接处理类
+     * @throws InterruptedException
+     * @author dreamj
+     * @Date 2021-02-23 17:59
+     */
     public void bind(ServerConfig sc, Function<SocketChannel, ? extends TCPConnection> connection) throws InterruptedException {
 
         TCPDispatcher dispatcher = new TCPDispatcher(sc.name, connection);
@@ -57,6 +78,13 @@ public class TCPServer {
         });
     }
 
+    /**
+     * 关闭指定开启的服务端
+     * 
+     * @param name
+     * @author dreamj
+     * @Date 2021-02-23 18:00
+     */
     public void close(String name) {
         dispatchers.remove(name);
         if (server != null) {
@@ -71,12 +99,26 @@ public class TCPServer {
         }
     }
 
+    /**
+     * 停止当前服务器，关闭当前所有开启服务端
+     * 
+     * @author dreamj
+     * @Date 2021-02-23 18:00
+     */
     public void shutdown() {
         for (String name : dispatchers.keySet()) {
             close(name);
         }
     }
 
+    /**
+     * 获取指定服务端所有连接的客户端
+     * 
+     * @param name
+     * @return
+     * @author dreamj
+     * @Date 2021-02-23 18:00
+     */
     public List<TCPConnection> getConnections(String name) {
         TCPDispatcher dispatcher = dispatchers.get(name);
         if (dispatcher != null) {
@@ -85,6 +127,14 @@ public class TCPServer {
         return new ArrayList<>();
     }
 
+    /**
+     * 获取指定服务端所有连接的客户端数量
+     * 
+     * @param name
+     * @return
+     * @author dreamj
+     * @Date 2021-02-23 18:01
+     */
     public int getConnectionSize(String name) {
         TCPDispatcher dispatcher = dispatchers.get(name);
         if (dispatcher != null) {

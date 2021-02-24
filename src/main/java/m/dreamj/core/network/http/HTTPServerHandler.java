@@ -19,13 +19,19 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
+/**
+ * HTTP 服务器处理类
+ * 
+ * @author dreamj
+ * @Date 2021-02-24 16:08
+ */
 public abstract class HTTPServerHandler extends ChannelInboundHandlerAdapter {
-    protected ChannelHandlerContext ctx;
-    protected HttpRequest request;
+    protected ChannelHandlerContext     ctx;
+    protected HttpRequest               request;
 
     protected Map<String, List<String>> querys;
-    protected ByteBuf content;
-    private HttpMethod method;
+    protected ByteBuf                   content;
+    private HttpMethod                  method;
 
     public HTTPServerHandler() {
         this(1024 * 4);
@@ -43,7 +49,7 @@ public abstract class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     public HTTPServerHandler(int capSize, HttpMethod method) {
         super();
         this.content = Unpooled.buffer(capSize);
-        this.method = method;
+        this.method  = method;
     }
 
     @Override
@@ -83,18 +89,21 @@ public abstract class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        ctx.close();
+        shutdown();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         super.channelUnregistered(ctx);
-        ctx = null;
-        querys = null;
-        content = null;
-        request = null;
+        shutdown();
     }
 
+    /**
+     * 接收到请求信息处理
+     * 
+     * @author dreamj
+     * @Date 2021-02-24 16:11
+     */
     public abstract void handle();
 
     public void send(String data) {
@@ -115,12 +124,14 @@ public abstract class HTTPServerHandler extends ChannelInboundHandlerAdapter {
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         response.content().writeBytes(buff);
         ctx.writeAndFlush(response);
-        ctx.close();
-        ctx = null;
-        querys = null;
+        shutdown();
     }
 
     protected void shutdown() {
-
+        ctx.close();
+        ctx     = null;
+        querys  = null;
+        content = null;
+        request = null;
     }
 }

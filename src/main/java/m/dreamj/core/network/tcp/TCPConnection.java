@@ -9,12 +9,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.SocketChannel;
 
+/**
+ * tcp 连接处理
+ * 
+ * @author dreamj
+ * @Date 2021-02-24 14:42
+ */
 public abstract class TCPConnection extends ChannelInboundHandlerAdapter {
 
-    private final static Logger log = LoggerFactory.getLogger(TCPConnection.class);
+    private final static Logger log        = LoggerFactory.getLogger(TCPConnection.class);
     private final SocketChannel channel;
 
-    private ByteBuf readBuffer = Unpooled.directBuffer(2048);
+    private ByteBuf             readBuffer = Unpooled.directBuffer(2048);
 
     public TCPConnection(SocketChannel channel) {
         this.channel = channel;
@@ -27,7 +33,10 @@ public abstract class TCPConnection extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * 连接成功处理
+     * 连接成功后处理（消息通道可进行消息发送）
+     * 
+     * @author dreamj
+     * @Date 2021-02-24 14:42
      */
     public void connected() {
 
@@ -63,16 +72,34 @@ public abstract class TCPConnection extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
+    /**
+     * 获取远程连接地址
+     * 
+     * @return
+     * @author dreamj
+     * @Date 2021-02-24 16:01
+     */
     public String getRemoteAddr() {
         return channel.remoteAddress().toString();
     }
 
+    /**
+     * 结束远程连接
+     * 
+     * @author dreamj
+     * @Date 2021-02-24 16:01
+     */
     public void shutdown() {
         channel.close();
         close();
-
     }
 
+    /**
+     * 连接关闭
+     * 
+     * @author dreamj
+     * @Date 2021-02-24 16:01
+     */
     public void close() {
     }
 
@@ -90,13 +117,51 @@ public abstract class TCPConnection extends ChannelInboundHandlerAdapter {
         }
     }
 
+    /**
+     * 发送字符串数据，主要用于测试，建议使用{@link #send(byte[]) }或者 {@link #send(ByteBuf)}发送
+     * 
+     * @param data
+     * @author dreamj
+     * @Date 2021-02-24 16:01
+     */
     public void send(String data) {
+        send(data);
+    }
+
+    /**
+     * 发送数据
+     * 
+     * @param data
+     * @author dreamj
+     * @Date 2021-02-24 16:02
+     */
+    public void send(byte[] data) {
         ByteBuf buff = Unpooled.directBuffer();
-        buff.writeInt(data.getBytes().length);
-        buff.writeBytes(data.getBytes());
+        buff.writeInt(data.length);
+        buff.writeBytes(data);
         channel.writeAndFlush(buff);
     }
 
+    /**
+     * 发送数据
+     * 
+     * @param buff
+     * @author dreamj
+     * @Date 2021-02-24 14:44
+     */
+    public void send(ByteBuf buff) {
+        channel.writeAndFlush(buff);
+    }
+
+    /**
+     * 接收到数据解析处理
+     * 
+     * @param msg
+     * @return
+     * @throws Exception
+     * @author dreamj
+     * @Date 2021-02-24 16:05
+     */
     protected abstract boolean processData(ByteBuf msg) throws Exception;
 
 }
